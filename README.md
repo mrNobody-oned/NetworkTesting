@@ -99,6 +99,6 @@ This tool is designed to help with network testing, including Wi-Fi information 
 
 For any issues or feature requests, please contact:
 
-**Integrated Solution Inc.**  
-Website: [Insert website URL]  
-Email: [Insert contact email]
+**UPLINK Integrated Solution Inc.**  
+Website: www.uplinkph.net 
+Email: technical@uplinkph.net
