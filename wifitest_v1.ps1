@@ -57,7 +57,7 @@ if ([string]::IsNullOrEmpty($pingTarget)) {
     $pingTarget = "google.com"
 }
 
-$iperfTarget = Read-Host -Prompt "Enter the IP address for Bandwidth test (default: 192.168.100.1 [Firewall])"
+$iperfTarget = Read-Host -Prompt "Enter the IP address for Bandwidth test (default: Firewall [192.168.100.1])"
 if ([string]::IsNullOrEmpty($iperfTarget)) {
     $iperfTarget = "192.168.100.1"
 }
