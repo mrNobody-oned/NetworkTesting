@@ -12,7 +12,7 @@ Write-Host "
 | |___| | | | | | | | | | |< ( 
  \______| ||_/|_|_|_| |_|_| \_)
         |_|                    
-Integrated Solution Inc (c) 20212-2024
+Integrated Solution Inc (c) 2021-2024
 " -ForegroundColor Green
 
 Start-Sleep -Seconds 1  # Add a brief pause for effect
@@ -23,14 +23,17 @@ Write-Host "`nNetwork Testing" -ForegroundColor Green
 # Get the current time and format it as YYYY-MM-DD_HH-MM-SS for folder name
 $currentTime = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
 
-# Define the base folder path and the new timestamped folder
-$baseFolderPath = "D:\User Files\Music\WiFiTest\NetworkTestResult"
-$timestampFolderPath = Join-Path -Path $baseFolderPath -ChildPath $currentTime
+# Dynamically determine the base folder path relative to the script's location
+$scriptDirectory = Split-Path -Path $MyInvocation.MyCommand.Definition
+$baseFolderPath = Join-Path -Path $scriptDirectory -ChildPath "WiFiTest\NetworkTestResult"
 
 # Create the NetworkTesting folder if it doesn't exist
 if (-not (Test-Path -Path $baseFolderPath)) {
     New-Item -Path $baseFolderPath -ItemType Directory | Out-Null  # Suppress output
 }
+
+# Define the timestamped folder path
+$timestampFolderPath = Join-Path -Path $baseFolderPath -ChildPath $currentTime
 
 # Create the timestamped folder
 New-Item -Path $timestampFolderPath -ItemType Directory | Out-Null  # Suppress output
@@ -54,9 +57,9 @@ if ([string]::IsNullOrEmpty($pingTarget)) {
     $pingTarget = "google.com"
 }
 
-$iperfTarget = Read-Host -Prompt "Enter the IP address for iPerf3 test (default: 192.168.1.11)"
+$iperfTarget = Read-Host -Prompt "Enter the IP address for Bandwidth test (default: 192.168.100.1 [Firewall])"
 if ([string]::IsNullOrEmpty($iperfTarget)) {
-    $iperfTarget = "192.168.1.11"
+    $iperfTarget = "192.168.100.1"
 }
 
 # Gathering Wi-Fi Information
@@ -71,16 +74,14 @@ try {
     $signalStrength = ($wifiInfo | Select-String "Signal" | ForEach-Object { $_.Line -replace "Signal\s*:\s*", "" }).Trim()
     $technology = ($wifiInfo | Select-String "Radio type" | ForEach-Object { $_.Line -replace "Radio type\s*:\s*", "" }).Trim()
 
-    # Gather IP, Gateway, and DNS information
+    # Gather IP, Gateway, and IPv4 DNS information
     $networkConfig = Get-NetIPConfiguration
     $ipAddress = ($networkConfig.IPv4Address | Select-Object -First 1).IPAddress
     $gateway = ($networkConfig.IPv4DefaultGateway | Select-Object -First 1).NextHop
-    $dnsServers = ($networkConfig.DNSServer | ForEach-Object { $_.ServerAddresses }) -join ", "
+    $dnsServers = ($networkConfig.DNSServer | ForEach-Object { $_.ServerAddresses } | Where-Object { $_ -match "^\d{1,3}(\.\d{1,3}){3}$" }) -join ", "
 
     # Display the Wi-Fi information in the console and add to the text file
     $wifiInfoText = @"
-
-
 =========================================WIRELESS NETWORK TESTING===============================================
 DATE & TIME: $currentTime
 
@@ -122,7 +123,6 @@ try {
 
 # Bandwidth Test using iPerf (iPerf3 located in the same folder as the script)
 try {
-    $scriptDirectory = Split-Path -Path $MyInvocation.MyCommand.Definition
     $iperfPath = Join-Path -Path $scriptDirectory -ChildPath "iperf3.exe"
     $iperfTestOutput = & $iperfPath -c $iperfTarget -t 10 -i 1 | Out-String
 
@@ -139,6 +139,25 @@ $iperfTestOutput
 
     Write-Host $iperfInfoText
     Add-Content -Path $outputFile -Value $iperfInfoText
+} catch {
+    Handle-Error $_.Exception.Message
+}
+
+# Speedtest CLI Test
+try {
+    $speedtestPath = "speedtest"  # Ensure 'speedtest' CLI is in PATH
+    $speedtestOutput = & $speedtestPath | Out-String
+
+    if ($speedtestOutput -eq $null) {
+        throw "Speedtest did not return any results."
+    }
+
+    $speedtestInfoText = @"
+***************** SPEED TEST ******************
+$speedtestOutput
+"@
+    Write-Host $speedtestInfoText
+    Add-Content -Path $outputFile -Value $speedtestInfoText
 } catch {
     Handle-Error $_.Exception.Message
 }
