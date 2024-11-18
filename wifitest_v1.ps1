@@ -57,7 +57,7 @@ if ([string]::IsNullOrEmpty($pingTarget)) {
     $pingTarget = "google.com"
 }
 
-$iperfTarget = Read-Host -Prompt "Enter the IP address for Bandwidth test (default: Firewall [192.168.100.1])"
+$iperfTarget = Read-Host -Prompt "Enter the IP address for Bandwidth test (default: 192.168.100.1 [Firewall])"
 if ([string]::IsNullOrEmpty($iperfTarget)) {
     $iperfTarget = "192.168.100.1"
 }
@@ -143,9 +143,9 @@ $iperfTestOutput
     Handle-Error $_.Exception.Message
 }
 
-# Speedtest CLI Test
+# Speedtest CLI Test (Speedtest executable in the same folder as the script)
 try {
-    $speedtestPath = "speedtest"  # Ensure 'speedtest' CLI is in PATH
+    $speedtestPath = Join-Path -Path $scriptDirectory -ChildPath "speedtest.exe"
     $speedtestOutput = & $speedtestPath | Out-String
 
     if ($speedtestOutput -eq $null) {
